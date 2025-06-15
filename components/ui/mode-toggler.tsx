@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
+
   const sunRef = React.useRef<SVGSVGElement>(null);
   const moonRef = React.useRef<SVGSVGElement>(null);
 

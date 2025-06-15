@@ -6,6 +6,7 @@ import { ModeToggle } from "./ui/mode-toggler";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { GiTwoCoins } from "react-icons/gi";
 import {
   Sheet,
   SheetContent,
@@ -13,7 +14,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "./ui/sheet";
-import { SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const Header = () => {
   return (
@@ -25,27 +27,77 @@ const Header = () => {
             <span className="font-bold">CraftRez</span>
           </Link>
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            {routes.map((route) => (
-              <Link
-                key={route.href}
-                href={route.href}
-                className={cn(
-                  "transition-colors hover:text-foreground/80",
-                  "text-foreground/60"
-                )}
-              >
-                {route.name}
-              </Link>
-            ))}
+            {routes.map((route) => {
+              if (route.authenticated) {
+                return (
+                  <SignedIn key={route.href}>
+                    <Link
+                      key={route.href}
+                      href={route.href}
+                      className={cn(
+                        "transition-colors hover:text-foreground/80",
+                        "text-foreground/60"
+                      )}
+                    >
+                      {route.name}
+                    </Link>
+                  </SignedIn>
+                );
+              }
+              return (
+                <Link
+                  key={route.href}
+                  href={route.href}
+                  className={cn(
+                    "transition-colors hover:text-foreground/80",
+                    "text-foreground/60"
+                  )}
+                >
+                  {route.name}
+                </Link>
+              );
+            })}
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <ModeToggle />
-          <SignInButton mode="modal">
-            <Button variant="outline">
-              <User className="h-5 w-5" /> Sign In
-            </Button>
-          </SignInButton>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button variant="outline">
+                <User className="h-5 w-5" /> Sign In
+              </Button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50"
+                  >
+                    <GiTwoCoins className="h-5 w-5 text-yellow-500" />
+                    <span className="text-sm font-medium">100</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Credits</h4>
+                    <p className="text-sm text-muted-foreground">
+                      You have 100 credits remaining. When you run out of
+                      credits, visit the purchase page to buy more.
+                    </p>
+                    <Link href="/purchase">
+                      <Button variant="default" className="w-full mt-2">
+                        Buy Credits
+                      </Button>
+                    </Link>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <UserButton />
+            </div>
+          </SignedIn>
 
           <nav className="flex items-center">
             <Sheet>

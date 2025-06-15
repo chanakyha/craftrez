@@ -1,20 +1,29 @@
-import { ThemeProvider } from "next-themes";
+"use client";
+
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
+import { useTheme } from "next-themes";
 
 interface ProvidersProps {
   children: React.ReactNode;
 }
 
 const Providers = ({ children }: ProvidersProps) => {
+  const { theme } = useTheme();
+
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
+    <ClerkProvider
+      appearance={{
+        baseTheme: theme === "dark" ? dark : undefined,
+        elements: {
+          userButtonPopoverFooter: {
+            display: "none",
+          },
+        },
+      }}
     >
-      <ClerkProvider>{children}</ClerkProvider>
-    </ThemeProvider>
+      {children}
+    </ClerkProvider>
   );
 };
 
