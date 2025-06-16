@@ -7,12 +7,12 @@ export const metadata = {
 
 export default function PurchasePage() {
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col justify-center items-center">
       <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">
           Purchase Credits
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
           Choose a credit package that suits your needs or top up with a custom
           amount. Each credit can be used to generate a professional resume.
         </p>

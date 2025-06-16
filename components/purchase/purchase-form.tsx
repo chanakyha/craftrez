@@ -95,7 +95,7 @@ export const PurchaseForm = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-12">
+    <div className="container mx-auto p-4 space-y-8">
       <Card className="max-w-2xl mx-auto shadow-lg">
         <CardHeader className="space-y-1.5">
           <CardTitle className="text-2xl">Your Credit Balance</CardTitle>
@@ -181,7 +181,7 @@ export const PurchaseForm = () => {
             Select a package that best suits your needs
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
           {CREDIT_PACKAGES.map((pkg, index) => (
             <Card
               key={pkg.id}
