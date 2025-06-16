@@ -20,4 +20,5 @@ model User {
   avatar   String?
   FullName String?
   username String?
+  credits  Int     @default(0)
 }
