@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Calendar,
-  DollarSign,
   CreditCard,
   CheckCircle,
   XCircle,
@@ -25,6 +24,7 @@ import { refreshAllSessions } from "@/lib/actions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { FaRupeeSign, FaCoins } from "react-icons/fa";
 
 interface TransactionsClientProps {
   initialSessions: Session[];
@@ -132,6 +132,31 @@ const TransactionsClient = ({ initialSessions }: TransactionsClientProps) => {
     }
   };
 
+  // Calculate summary statistics
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const statusCounts = {
+    open: safeSessions.filter((session) => session.status === "open").length,
+    complete: safeSessions.filter((session) => session.status === "complete")
+      .length,
+    expired: safeSessions.filter((session) => session.status === "expired")
+      .length,
+  };
+
+  const totalCredits = safeSessions
+    .filter((session) => session.status === "complete")
+    .reduce((total, session) => {
+      const quantity =
+        Math.floor((session.line_items?.data?.[0]?.amount_total || 0) / 100) *
+          0.69 || 0;
+      return total + quantity;
+    }, 0);
+
+  const totalAmountSpent = safeSessions
+    .filter((session) => session.status === "complete")
+    .reduce((total, session) => {
+      return total + (session.amount_total || 0);
+    }, 0);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col space-y-6">
@@ -209,6 +234,86 @@ const TransactionsClient = ({ initialSessions }: TransactionsClientProps) => {
           </div>
         </div>
 
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Open Transactions */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Open
+                  </p>
+                  <p className="text-2xl font-bold">{statusCounts.open}</p>
+                </div>
+                <Clock className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Complete Transactions */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Complete
+                  </p>
+                  <p className="text-2xl font-bold">{statusCounts.complete}</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Expired Transactions */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Expired
+                  </p>
+                  <p className="text-2xl font-bold">{statusCounts.expired}</p>
+                </div>
+                <XCircle className="w-8 h-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Credits */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Credits Purchased
+                  </p>
+                  <p className="text-2xl font-bold">{totalCredits}</p>
+                </div>
+                <FaCoins className="w-8 h-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Amount Spent */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total Spent
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {formatAmount(totalAmountSpent, "usd")}
+                  </p>
+                </div>
+                <FaRupeeSign className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Transactions List */}
         <div className="space-y-4">
           {!Array.isArray(filteredSessions) || filteredSessions.length === 0 ? (
@@ -283,7 +388,6 @@ const TransactionsClient = ({ initialSessions }: TransactionsClientProps) => {
 
                       <div className="flex flex-col items-end gap-2">
                         <div className="flex items-center gap-1 text-lg font-semibold">
-                          <DollarSign className="w-4 h-4" />
                           {formatAmount(session.amount_total, session.currency)}
                         </div>
 
