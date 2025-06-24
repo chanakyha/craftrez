@@ -23,3 +23,7 @@ export const expireSession = async (session_id: string) => {
 
   revalidateTag("session");
 };
+
+export const refreshAllSessions = async () => {
+  revalidateTag("transactions");
+};

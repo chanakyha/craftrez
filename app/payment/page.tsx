@@ -74,9 +74,9 @@ const PaymentPage = async ({
     serializedSession?.payment_status === "paid" &&
     serializedSession?.status === "complete";
   const isPaymentFailed =
-    serializedSession?.status === "expired" ||
-    (serializedSession?.payment_status &&
-      serializedSession.payment_status !== "paid");
+    serializedSession?.payment_status &&
+    serializedSession.payment_status !== "paid" &&
+    serializedSession?.status === "expired";
   const isPaymentPending = serializedSession?.status === "open";
 
   // Get appropriate header content based on payment status
@@ -510,18 +510,6 @@ const PaymentPage = async ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 sm:pt-6">
-          {serializedSession?.status != "expired" && serializedSession?.url && (
-            <Button
-              asChild
-              disabled={!serializedSession?.url}
-              variant="outline"
-              className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-3"
-            >
-              <Link href={serializedSession?.url || "/purchase"}>
-                Try Again
-              </Link>
-            </Button>
-          )}
           {isPaymentSuccessful ? (
             <>
               <Button
@@ -585,9 +573,10 @@ const PaymentPage = async ({
               </Button>
             </>
           )}
-          {serializedSession?.status != "expired" && (
-            <ExpireSessionButton session_id={sessionId} />
-          )}
+          {serializedSession?.status != "expired" &&
+            serializedSession?.payment_status !== "paid" && (
+              <ExpireSessionButton session_id={sessionId} />
+            )}
         </div>
       </div>
     </div>

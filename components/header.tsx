@@ -2,6 +2,7 @@
 
 import { routes } from "@/lib/constants";
 import { Menu, Sparkle, User } from "lucide-react";
+import { TbTransactionRupee } from "react-icons/tb";
 import { ModeToggle } from "./ui/mode-toggler";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -116,7 +117,41 @@ const Header = () => {
                   </div>
                 </PopoverContent>
               </Popover>
-              <UserButton />
+              <UserButton
+                fallback={<Skeleton className="w-10 h-10 rounded-full" />}
+              >
+                <UserButton.MenuItems>
+                  <UserButton.Link
+                    label="Buy Credits"
+                    labelIcon={<GiTwoCoins className="h-5 w-5" />}
+                    href="/purchase"
+                  />
+                  <UserButton.Link
+                    label="View Transactions"
+                    labelIcon={<TbTransactionRupee className="h-5 w-5" />}
+                    href="/transactions"
+                  />
+                </UserButton.MenuItems>
+                <UserButton.UserProfilePage
+                  label="Credits"
+                  labelIcon={<GiTwoCoins className="h-5 w-5" />}
+                  url="help"
+                >
+                  <h1 className="text-lg font-medium">Credits</h1>
+
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      You have {credits} credits remaining. When you run out of
+                      credits, visit the purchase page to buy more.
+                    </p>
+                    <Link href="/purchase">
+                      <Button variant="default" className="w-full mt-2">
+                        Buy Credits
+                      </Button>
+                    </Link>
+                  </div>
+                </UserButton.UserProfilePage>
+              </UserButton>
             </div>
           </SignedIn>
 
