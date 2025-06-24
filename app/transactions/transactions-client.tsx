@@ -173,6 +173,7 @@ const TransactionsClient = ({ initialSessions }: TransactionsClientProps) => {
                 <Button
                   size={"icon"}
                   variant="outline"
+                  asChild
                   className="flex items-center gap-2"
                 >
                   <Filter className="w-4 h-4" />

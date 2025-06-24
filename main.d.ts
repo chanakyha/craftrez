@@ -11,13 +11,17 @@ type Template = {
   downloadLink: string;
 };
 
-type CreditPackage = {
+type SubscriptionPackage = {
   id: number;
   name: string;
   price: number;
   popular: boolean;
   description: string;
   discount?: number;
+  billingCycle: "monthly" | "yearly";
+  creditsPerMonth: number;
+  benefits: string[];
+  features: string[];
 };
 
 type Session = {

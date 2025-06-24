@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CREDIT_PACKAGES, CREDIT_CONVERSION_RATE } from "@/lib/constants";
+import { SUBSCRIPTION_PACKAGES, CREDIT_CONVERSION_RATE } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { gsap } from "gsap";
 import { GiTwoCoins } from "react-icons/gi";
 import { getCredits } from "@/lib/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadStripe } from "@stripe/stripe-js";
+import { Check, Star } from "lucide-react";
 
 import { useUser } from "@clerk/nextjs";
 
@@ -85,7 +86,7 @@ export const PurchaseForm = () => {
     const amount = parseInt(topUpAmount);
     if (!isNaN(amount) && amount > 0) {
       const convertedCredits = Math.floor(amount * CREDIT_CONVERSION_RATE);
-      setCredits((prev) => (prev ?? 0) + convertedCredits);
+      handleCheckout(amount, convertedCredits);
       setTopUpAmount("");
       animateCreditUpdate();
     }
@@ -195,26 +196,27 @@ export const PurchaseForm = () => {
       <div className="space-y-6">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-semibold tracking-tight">
-            Choose a Package
+            Choose Your Subscription Plan
           </h2>
           <p className="text-muted-foreground">
-            Select a package that best suits your needs
+            Select a subscription that best fits your career goals
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {CREDIT_PACKAGES.map((pkg, index) => (
+          {SUBSCRIPTION_PACKAGES.map((pkg, index) => (
             <Card
               key={pkg.id}
               ref={(el) => {
                 if (el) packageCardsRef.current[index] = el;
               }}
               className={`relative transition-all duration-200 hover:shadow-lg ${
-                pkg.popular ? "border-primary" : ""
+                pkg.popular ? "border-primary ring-2 ring-primary/20" : ""
               }`}
             >
               {pkg.popular && (
                 <Badge className="absolute -top-2 -right-2 bg-primary">
-                  Popular
+                  <Star className="w-3 h-3 mr-1" />
+                  Most Popular
                 </Badge>
               )}
               <CardHeader className="space-y-1.5">
@@ -229,6 +231,9 @@ export const PurchaseForm = () => {
                     <span className="text-3xl font-bold">
                       {formatCurrency(pkg.price)}
                     </span>
+                    <span className="text-sm text-muted-foreground">
+                      /month
+                    </span>
                     {pkg.discount && (
                       <span className="text-sm text-muted-foreground line-through">
                         {formatCurrency(pkg.price / (1 - pkg.discount / 100))}
@@ -237,27 +242,59 @@ export const PurchaseForm = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">
-                      {Math.floor(pkg.price * CREDIT_CONVERSION_RATE)} credits
+                      {pkg.creditsPerMonth} credits per month
                     </p>
                     {pkg.discount && (
                       <p className="text-sm font-medium text-green-600">
-                        Save {pkg.discount}% with this package
+                        Save {pkg.discount}% with this plan
                       </p>
                     )}
                   </div>
                 </div>
+
+                {/* Benefits Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground">
+                    Key Benefits:
+                  </h4>
+                  <ul className="space-y-2">
+                    {pkg.benefits.map((benefit, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Features Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground">
+                    Features:
+                  </h4>
+                  <ul className="space-y-2">
+                    {pkg.features.slice(0, 4).map((feature, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                    {pkg.features.length > 4 && (
+                      <li className="text-sm text-muted-foreground">
+                        +{pkg.features.length - 4} more features
+                      </li>
+                    )}
+                  </ul>
+                </div>
+
                 <div className="pt-2">
                   <Button
                     className="w-full h-11"
-                    // onClick={() => handlePackageSelect(pkg.price, index)}
                     onClick={() =>
-                      handleCheckout(
-                        pkg.price,
-                        Math.floor(pkg.price * CREDIT_CONVERSION_RATE)
-                      )
+                      handleCheckout(pkg.price, pkg.creditsPerMonth)
                     }
                   >
-                    Purchase Now
+                    Start {pkg.name} Plan
                   </Button>
                 </div>
               </CardContent>

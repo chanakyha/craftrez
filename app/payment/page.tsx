@@ -577,6 +577,13 @@ const PaymentPage = async ({
             serializedSession?.payment_status !== "paid" && (
               <ExpireSessionButton session_id={sessionId} />
             )}
+          <Button
+            asChild
+            variant="outline"
+            className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-3"
+          >
+            <Link href="/transactions">All Transactions</Link>
+          </Button>
         </div>
       </div>
     </div>

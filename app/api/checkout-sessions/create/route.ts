@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: "inr",
             product_data: {
-              name: "Rez AI Credits",
+              name: `Rez AI Credits - ${credits} credits`,
               description: `Get ${credits} AI credits to use with Rez AI. Each credit allows you to generate one AI response. Credits never expire and can be used anytime.`,
               metadata: {
                 credits,
