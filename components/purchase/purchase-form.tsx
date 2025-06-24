@@ -16,6 +16,13 @@ import { gsap } from "gsap";
 import { GiTwoCoins } from "react-icons/gi";
 import { getCredits } from "@/lib/actions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { loadStripe } from "@stripe/stripe-js";
+
+import { useUser } from "@clerk/nextjs";
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-IN", {
@@ -32,6 +39,7 @@ export const PurchaseForm = () => {
   const [isLoading, setIsLoading] = useState(true);
   const creditCountRef = useRef<HTMLParagraphElement>(null);
   const packageCardsRef = useRef<HTMLDivElement[]>([]);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchCredits = async () => {
@@ -61,17 +69,17 @@ export const PurchaseForm = () => {
     }
   };
 
-  const animatePackageCard = (index: number) => {
-    if (packageCardsRef.current[index]) {
-      gsap.to(packageCardsRef.current[index], {
-        scale: 0.95,
-        duration: 0.1,
-        yoyo: true,
-        repeat: 1,
-        ease: "power2.out",
-      });
-    }
-  };
+  // const animatePackageCard = (index: number) => {
+  //   if (packageCardsRef.current[index]) {
+  //     gsap.to(packageCardsRef.current[index], {
+  //       scale: 0.95,
+  //       duration: 0.1,
+  //       yoyo: true,
+  //       repeat: 1,
+  //       ease: "power2.out",
+  //     });
+  //   }
+  // };
 
   const handleTopUp = () => {
     const amount = parseInt(topUpAmount);
@@ -83,16 +91,28 @@ export const PurchaseForm = () => {
     }
   };
 
-  const handlePackageSelect = (
-    packageCredits: number,
-    price: number,
-    index: number
-  ) => {
-    const convertedCredits = Math.floor(price * CREDIT_CONVERSION_RATE);
-    setCredits((prev) => (prev ?? 0) + convertedCredits);
-    animateCreditUpdate();
-    animatePackageCard(index);
+  const handleCheckout = async (price: number, credits: number) => {
+    const stripe = await stripePromise;
+
+    const response = await fetch("/api/checkout-sessions/create", {
+      method: "POST",
+      body: JSON.stringify({
+        price,
+        credits,
+        email: user?.emailAddresses[0].emailAddress,
+      }),
+    });
+    const session = await response.json();
+    console.log(session);
+    await stripe?.redirectToCheckout({ sessionId: session.id });
   };
+
+  // const handlePackageSelect = (price: number, index: number) => {
+  //   const convertedCredits = Math.floor(price * CREDIT_CONVERSION_RATE);
+  //   setCredits((prev) => (prev ?? 0) + convertedCredits);
+  //   animateCreditUpdate();
+  //   animatePackageCard(index);
+  // };
 
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -229,8 +249,12 @@ export const PurchaseForm = () => {
                 <div className="pt-2">
                   <Button
                     className="w-full h-11"
+                    // onClick={() => handlePackageSelect(pkg.price, index)}
                     onClick={() =>
-                      handlePackageSelect(pkg.credits, pkg.price, index)
+                      handleCheckout(
+                        pkg.price,
+                        Math.floor(pkg.price * CREDIT_CONVERSION_RATE)
+                      )
                     }
                   >
                     Purchase Now

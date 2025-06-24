@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function PurchasePage() {
   return (
-    <div className="flex flex-col justify-center items-center">
+    <div className="flex flex-col justify-center items-center h-container">
       <div className="container mx-auto px-4 py-12 text-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">
           Purchase Credits

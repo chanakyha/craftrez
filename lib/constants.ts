@@ -33,43 +33,30 @@ export const templates: Template[] = [
   },
 ];
 
-export type CreditPackage = {
-  id: number;
-  name: string;
-  credits: number;
-  price: number;
-  popular: boolean;
-  description: string;
-  discount?: number;
-};
-
 export const CREDIT_PACKAGES: CreditPackage[] = [
   {
     id: 1,
     name: "Starter",
-    credits: 10,
     price: 499,
     popular: false,
     description: "Perfect for trying out our service",
-    discount: 10, // 10% discount
+    discount: 10,
   },
   {
     id: 2,
     name: "Popular",
-    credits: 50,
     price: 1999,
     popular: true,
     description: "Most popular choice for regular users",
-    discount: 20, // 20% discount
+    discount: 20,
   },
   {
     id: 3,
     name: "Professional",
-    credits: 100,
     price: 3499,
     popular: false,
     description: "Best value for professionals",
-    discount: 30, // 30% discount
+    discount: 30,
   },
 ];
 

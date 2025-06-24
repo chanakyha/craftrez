@@ -119,4 +119,8 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .h-container {
+    @apply min-h-[calc(100vh-33.45rem)] md:min-h-[calc(100vh-19.45rem)];
+  }
 }

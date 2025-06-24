@@ -7,6 +7,7 @@ import Providers from "./providers";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "CraftRez",
@@ -32,11 +33,10 @@ export default function RootLayout({
         >
           <Providers>
             <Header />
-            <main className="flex-1 min-h-[calc(100vh-33.45rem)] md:min-h-[calc(100vh-19.45rem)] w-full ">
-              {children}
-            </main>
+            <main className="flex-1 h-container  w-full ">{children}</main>
             <Footer />
           </Providers>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import prisma from "./prisma";
 import { currentUser } from "@clerk/nextjs/server";
+import { revalidateTag } from "next/cache";
 
 export const getCredits = async () => {
   const user = await currentUser();
@@ -12,4 +13,13 @@ export const getCredits = async () => {
     where: { clerkId: user?.id },
   });
   return userData?.credits;
+};
+
+export const expireSession = async (session_id: string) => {
+  await fetch("http://localhost:3000/api/expire-session", {
+    method: "POST",
+    body: JSON.stringify({ session_id }),
+  });
+
+  revalidateTag("session");
 };

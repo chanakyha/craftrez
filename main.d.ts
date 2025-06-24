@@ -10,3 +10,12 @@ type Template = {
   images: string[];
   downloadLink: string;
 };
+
+type CreditPackage = {
+  id: number;
+  name: string;
+  price: number;
+  popular: boolean;
+  description: string;
+  discount?: number;
+};
