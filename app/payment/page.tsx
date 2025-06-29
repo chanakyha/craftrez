@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import Stripe from "stripe";
 import ExpireSessionButton from "./expire-session-button";
+import { auth } from "@clerk/nextjs/server";
 
 const PaymentPage = async ({
   searchParams,
@@ -20,7 +21,7 @@ const PaymentPage = async ({
 }) => {
   const sessionId = (await searchParams).session_id;
   let session: Stripe.Checkout.Session | null = null;
-
+  const { userId } = await auth();
   if (!sessionId) {
     return redirect("/");
   }
@@ -36,6 +37,10 @@ const PaymentPage = async ({
 
     const data = await response.json();
     session = data.session;
+
+    if (session?.metadata?.clerkId !== userId) {
+      return redirect("/");
+    }
   } catch (err) {
     if (
       err instanceof Error &&
@@ -116,6 +121,8 @@ const PaymentPage = async ({
   };
 
   const headerContent = getHeaderContent();
+
+  console.log(serializedSession);
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-4xl">
@@ -518,6 +525,15 @@ const PaymentPage = async ({
               >
                 <Link href="/">Go to Dashboard</Link>
               </Button>
+              {/* <Button
+                asChild
+                variant="outline"
+                className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-3"
+              >
+                <Link href={serializedSession?.receipt_url || ""}>
+                  Download Receipt
+                </Link>
+              </Button> */}
               <Button
                 asChild
                 variant="outline"
