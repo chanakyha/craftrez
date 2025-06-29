@@ -3,6 +3,8 @@
 import { routes } from "@/lib/constants";
 import { Menu, Sparkle, User } from "lucide-react";
 import { TbTransactionRupee } from "react-icons/tb";
+import { AiFillProfile } from "react-icons/ai";
+
 import { ModeToggle } from "./ui/mode-toggler";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -76,9 +78,9 @@ const Header = ({ credits }: { credits: number }) => {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50"
+                    className="flex items-center px-2 py-1 rounded-md bg-secondary/50"
                   >
-                    <GiTwoCoins className="h-5 w-5 text-yellow-500" />
+                    <GiTwoCoins className="h-5 w-5 text-yellow-500 mr-1" />
                     <span className="text-sm font-medium">{credits}</span>
                   </Button>
                 </PopoverTrigger>
@@ -101,6 +103,11 @@ const Header = ({ credits }: { credits: number }) => {
                 fallback={<Skeleton className="w-10 h-10 rounded-full" />}
               >
                 <UserButton.MenuItems>
+                  <UserButton.Link
+                    label="My Profile"
+                    labelIcon={<AiFillProfile className="h-5 w-5" />}
+                    href="/profile"
+                  />
                   <UserButton.Link
                     label="Buy Credits"
                     labelIcon={<GiTwoCoins className="h-5 w-5" />}

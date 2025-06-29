@@ -2,8 +2,6 @@
 
 import Image from "next/image";
 import { Carousel, CarouselItem } from "@/components/ui/carousel";
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -18,44 +16,9 @@ import Link from "next/link";
 import { DownloadIcon } from "lucide-react";
 
 const TemplateShowCase = ({ template }: { template: Template }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      gsap.from(containerRef.current, {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        ease: "power2.out",
-      });
-    }
-  }, []);
-
-  const handleDialogOpen = () => {
-    if (dialogRef.current) {
-      gsap.fromTo(
-        dialogRef.current,
-        {
-          opacity: 0,
-          scale: 0.98,
-        },
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 0.3,
-          ease: "power2.out",
-        }
-      );
-    }
-  };
-
   return (
     <>
-      <div
-        ref={containerRef}
-        className="w-full max-w-md bg-stone-200 dark:bg-stone-950  p-4 overflow-hidden group relative  shadow-lg border rounded-md"
-      >
+      <div className="w-full max-w-md bg-stone-200 dark:bg-stone-950  p-4 overflow-hidden group relative  shadow-lg border rounded-md">
         <Carousel className="w-full aspect-[1/1.414]">
           {template.images.map((image: string) => (
             <CarouselItem key={image}>
@@ -81,11 +44,8 @@ const TemplateShowCase = ({ template }: { template: Template }) => {
                       <DialogTrigger asChild>
                         <Button variant="outline">Preview Template</Button>
                       </DialogTrigger>
-                      <DialogContent
-                        className="max-w-4xl h-[40rem] md:h-[60rem] p-0"
-                        onOpenAutoFocus={handleDialogOpen}
-                      >
-                        <div ref={dialogRef} className="flex flex-col h-full">
+                      <DialogContent className="max-w-xl w-full h-[40rem] md:h-[55rem] p-0">
+                        <div className="flex flex-col h-full">
                           <div className="flex-1 overflow-hidden bg-muted/50">
                             <Carousel className="w-full h-full">
                               {template.images.map((image: string) => (
@@ -115,22 +75,30 @@ const TemplateShowCase = ({ template }: { template: Template }) => {
                                 {template.description}
                               </DialogDescription>
                             </DialogHeader>
-                            <DialogFooter className="mt-4 grid grid-cols-2 gap-2">
+                            <DialogFooter className="mt-4 flex justify-between">
                               <Button
                                 asChild
+                                className="flex items-center justify-center"
+                              >
+                                <Link
+                                  href={`/editor?template=${template.id}`}
+                                  className=""
+                                >
+                                  Use this Template
+                                </Link>
+                              </Button>
+                              <Button
+                                asChild
+                                size={"icon"}
                                 variant="outline"
-                                className="w-full"
+                                className="flex items-center justify-center"
                               >
                                 <Link
                                   target="_blank"
                                   href={template.downloadLink}
                                 >
-                                  <DownloadIcon className="w-4 h-4 mr-2" />
-                                  Download Template
+                                  <DownloadIcon className="w-4 h-4" />
                                 </Link>
-                              </Button>
-                              <Button className="w-full">
-                                Use this Template
                               </Button>
                             </DialogFooter>
                           </div>
@@ -141,7 +109,12 @@ const TemplateShowCase = ({ template }: { template: Template }) => {
                       variant="default"
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
                     >
-                      Use this Template
+                      <Link
+                        href={`/editor?template=${template.id}`}
+                        className="w-full"
+                      >
+                        Use this Template
+                      </Link>
                     </Button>
                   </div>
                 </div>

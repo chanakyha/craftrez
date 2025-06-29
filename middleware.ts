@@ -2,7 +2,14 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export default clerkMiddleware(async (auth, req) => {
-  if (req.nextUrl.pathname === "/resumes") {
+  const isPrivateRoute = [
+    "/profile",
+    "/resumes",
+    "/purchase",
+    "/transactions",
+  ].includes(req.nextUrl.pathname);
+
+  if (isPrivateRoute && !auth) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 });

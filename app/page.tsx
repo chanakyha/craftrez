@@ -2,6 +2,7 @@ import { SignedOut, SignedIn } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { templates } from "@/lib/constants";
 import TemplateShowCase from "@/components/template-card";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -30,7 +31,9 @@ export default function HomePage() {
             </p>
           </div>
 
-          <Button variant="outline">Create My Resume</Button>
+          <Button asChild variant="outline">
+            <Link href="/editor">Create My Resume</Link>
+          </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mt-8 gap-6">
           {templates.map((template, index) => (

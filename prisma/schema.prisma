@@ -15,10 +15,192 @@ datasource db {
 }
 
 model User {
-  clerkId  String  @id @unique
-  email    Json    @unique
-  avatar   String?
-  FullName String?
-  username String?
-  credits  Int     @default(0)
+  clerkId          String           @id @unique
+  email            Json             @unique
+  avatar           String?
+  FullName         String?
+  username         String?
+  credits          Int              @default(0)
+  resumes          Resume[]
+  educations       Education[]
+  experiences      Experience[]
+  projects         Project[]
+  certifications   Certification[]
+  publications     Publication[]
+  achievements     Achievement[]
+  responsibilities Responsibility[]
+  interests        Interest[]
+  languages        Language[]
+  skills           Skills[]
+}
+
+model Template {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String
+  images       String[]
+  downloadLink String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  resumes      Resume[]
+}
+
+model Resume {
+  id               Int              @id @default(autoincrement())
+  skills           Skills[]         @relation("ResumeSkills")
+  experiences      Experience[]     @relation("ResumeExperiences")
+  educations       Education[]      @relation("ResumeEducations")
+  projects         Project[]        @relation("ResumeProjects")
+  certifications   Certification[]  @relation("ResumeCertifications")
+  achievements     Achievement[]    @relation("ResumeAchievements")
+  publications     Publication[]    @relation("ResumePublications")
+  responsibilities Responsibility[] @relation("ResumeResponsibilities")
+  interests        Interest[]       @relation("ResumeInterests")
+  languages        Language[]       @relation("ResumeLanguages")
+  templateId       Int
+  ownerId          String
+  owner            User             @relation(fields: [ownerId], references: [clerkId])
+  template         Template         @relation(fields: [templateId], references: [id])
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Skills {
+  id        String   @id @default(uuid())
+  category  String
+  skills    String[]
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resumeId  Int?
+  resume    Resume?  @relation("ResumeSkills", fields: [resumeId], references: [id])
+}
+
+model Education {
+  id          String   @id @default(uuid())
+  school_name String
+  degree      String
+  place       String
+  start_date  DateTime
+  end_date    DateTime
+  marks       Float?
+  marksOutof  Int?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resumeId    Int?
+  resume      Resume?  @relation("ResumeEducations", fields: [resumeId], references: [id])
+}
+
+model Experience {
+  id           String   @id @default(uuid())
+  company_name String
+  position     String
+  start_date   DateTime
+  end_date     DateTime
+  description  String?
+  place        String
+  ownerId      String
+  owner        User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  resumeId     Int?
+  resume       Resume?  @relation("ResumeExperiences", fields: [resumeId], references: [id])
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  built_for   String
+  start_date  DateTime
+  end_date    DateTime
+  description String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resumeId    Int?
+  resume      Resume?  @relation("ResumeProjects", fields: [resumeId], references: [id])
+}
+
+model Certification {
+  id         String   @id @default(uuid())
+  name       String
+  issuer     String
+  issue_date DateTime
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  resumeId   Int?
+  resume     Resume?  @relation("ResumeCertifications", fields: [resumeId], references: [id])
+}
+
+model Publication {
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  publisher   String
+  description String?
+  year        Int
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resumeId    Int?
+  resume      Resume?  @relation("ResumePublications", fields: [resumeId], references: [id])
+}
+
+model Achievement {
+  id        String   @id @default(uuid())
+  name      String
+  position  String
+  place     String
+  issuer    String
+  date      DateTime
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resumeId  Int?
+  resume    Resume?  @relation("ResumeAchievements", fields: [resumeId], references: [id])
+}
+
+model Responsibility {
+  id        String   @id @default(uuid())
+  name      String
+  position  String
+  type      String
+  date      DateTime
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resumeId  Int?
+  resume    Resume?  @relation("ResumeResponsibilities", fields: [resumeId], references: [id])
+}
+
+model Interest {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resumeId  Int?
+  resume    Resume?  @relation("ResumeInterests", fields: [resumeId], references: [id])
+}
+
+model Language {
+  id          String   @id @default(uuid())
+  name        String
+  proficiency String
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [clerkId])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resumeId    Int?
+  resume      Resume?  @relation("ResumeLanguages", fields: [resumeId], references: [id])
 }

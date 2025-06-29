@@ -23,6 +23,7 @@ export const routes: Route[] = [
 
 export const templates: Template[] = [
   {
+    id: 7999,
     name: "Rez ATS Resume Template 1",
     description: "This is a template for an ATS resume.",
     images: [
