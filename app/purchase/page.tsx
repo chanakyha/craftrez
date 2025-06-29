@@ -1,11 +1,14 @@
 import { PurchaseForm } from "@/components/purchase/purchase-form";
+import { getCredits } from "@/lib/actions";
 
 export const metadata = {
   title: "Purchase Credits - CraftRez",
   description: "Purchase credits to generate professional resumes with AI",
 };
 
-export default function PurchasePage() {
+export default async function PurchasePage() {
+  const credits = await getCredits();
+
   return (
     <div className="flex flex-col justify-center items-center h-container">
       <div className="container mx-auto px-4 py-12 text-center">
@@ -17,7 +20,7 @@ export default function PurchasePage() {
           amount. Each credit can be used to generate a professional resume.
         </p>
       </div>
-      <PurchaseForm />
+      <PurchaseForm credits={credits ?? 0} />
     </div>
   );
 }

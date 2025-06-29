@@ -44,6 +44,7 @@ export async function POST(req: Request) {
         FullName: `${first_name} ${last_name}`,
         username: username,
         avatar: image_url,
+        credits: 10,
       },
     });
   } else if (event.type === "user.deleted") {

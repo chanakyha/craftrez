@@ -13,7 +13,7 @@ const TransactionsPage = async () => {
         "http://localhost:3000/api/all-sessions",
         {
           method: "POST",
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, clerkId: user?.id }),
           next: {
             tags: ["transactions"],
           },

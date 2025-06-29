@@ -6,17 +6,26 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
+  const { email, clerkId } = await req.json();
   try {
     const sessions = await stripe.checkout.sessions.list({
       limit: 100,
       expand: ["data.line_items"],
+
       customer_details: {
         email,
       },
     });
 
-    return NextResponse.json({ success: true, sessions });
+    return NextResponse.json({
+      success: true,
+      sessions: {
+        ...sessions,
+        data: sessions.data.filter(
+          (session) => session.metadata?.clerkId === clerkId
+        ),
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to get sessions", errorMessage: error },

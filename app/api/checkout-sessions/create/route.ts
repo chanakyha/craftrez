@@ -6,18 +6,23 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: NextRequest) {
-  const { price, credits, email } = await req.json();
+  const { price, credits, email, clerkId } = await req.json();
 
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       customer_email: email,
+      // customer_email: email,
       // customer_update: {
       //   address: "auto",
       //   name: "auto",
       // },
-      // customer_creation: "always",
+      customer_creation: "if_required",
       billing_address_collection: "required",
+      metadata: {
+        clerkId,
+        credits,
+      },
       line_items: [
         {
           price_data: {
@@ -25,9 +30,6 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: `Rez AI Credits - ${credits} credits`,
               description: `Get ${credits} AI credits to use with Rez AI. Each credit allows you to generate one AI response. Credits never expire and can be used anytime.`,
-              metadata: {
-                credits,
-              },
             },
             unit_amount: price * 100,
           },

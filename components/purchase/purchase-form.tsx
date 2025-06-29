@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -12,14 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SUBSCRIPTION_PACKAGES, CREDIT_CONVERSION_RATE } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
-import { gsap } from "gsap";
 import { GiTwoCoins } from "react-icons/gi";
-import { getCredits } from "@/lib/actions";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { loadStripe } from "@stripe/stripe-js";
 import { Check, Star } from "lucide-react";
 
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -34,61 +33,28 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-export const PurchaseForm = () => {
-  const [credits, setCredits] = useState<number | null>(null);
+export const PurchaseForm = ({ credits }: { credits: number }) => {
   const [topUpAmount, setTopUpAmount] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+
   const creditCountRef = useRef<HTMLParagraphElement>(null);
   const packageCardsRef = useRef<HTMLDivElement[]>([]);
   const { user } = useUser();
+  const [updatingCredits, setUpdatingCredits] = useState(false);
 
-  useEffect(() => {
-    const fetchCredits = async () => {
-      try {
-        const userCredits = await getCredits();
-        setCredits(userCredits ?? 0);
-      } catch (error) {
-        console.error("Failed to fetch credits:", error);
-        setCredits(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCredits();
-  }, []);
-
-  const animateCreditUpdate = () => {
-    if (creditCountRef.current) {
-      gsap.to(creditCountRef.current, {
-        scale: 1.2,
-        duration: 0.2,
-        yoyo: true,
-        repeat: 1,
-        ease: "power2.out",
-      });
-    }
-  };
-
-  // const animatePackageCard = (index: number) => {
-  //   if (packageCardsRef.current[index]) {
-  //     gsap.to(packageCardsRef.current[index], {
-  //       scale: 0.95,
-  //       duration: 0.1,
-  //       yoyo: true,
-  //       repeat: 1,
-  //       ease: "power2.out",
-  //     });
-  //   }
-  // };
-
-  const handleTopUp = () => {
+  const handleTopUp = async () => {
+    setUpdatingCredits(true);
     const amount = parseInt(topUpAmount);
     if (!isNaN(amount) && amount > 0) {
       const convertedCredits = Math.floor(amount * CREDIT_CONVERSION_RATE);
-      handleCheckout(amount, convertedCredits);
-      setTopUpAmount("");
-      animateCreditUpdate();
+      try {
+        await handleCheckout(amount, convertedCredits);
+      } catch (error) {
+        console.error("Failed to checkout:", error);
+        toast.error("Failed to checkout");
+      } finally {
+        setUpdatingCredits(false);
+        toast.success("Credits added successfully");
+      }
     }
   };
 
@@ -101,6 +67,7 @@ export const PurchaseForm = () => {
         price,
         credits,
         email: user?.emailAddresses[0].emailAddress,
+        clerkId: user?.id,
       }),
     });
     const session = await response.json();
@@ -131,16 +98,13 @@ export const PurchaseForm = () => {
                 <p className="text-sm font-medium text-muted-foreground">
                   Available Credits
                 </p>
-                {isLoading ? (
-                  <Skeleton className="h-9 w-24" />
-                ) : (
-                  <p
-                    ref={creditCountRef}
-                    className="text-3xl font-bold tracking-tight"
-                  >
-                    {credits}
-                  </p>
-                )}
+
+                <p
+                  ref={creditCountRef}
+                  className="text-3xl font-bold tracking-tight"
+                >
+                  {credits}
+                </p>
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-xl">
@@ -171,6 +135,13 @@ export const PurchaseForm = () => {
                 />
                 <Button
                   onClick={handleTopUp}
+                  isLoading={updatingCredits}
+                  disabled={
+                    isNaN(parseFloat(topUpAmount)) ||
+                    parseFloat(topUpAmount) < 100 ||
+                    parseFloat(topUpAmount) > 10000
+                  }
+                  loadingText="Processing..."
                   className="h-11 px-6 whitespace-nowrap"
                 >
                   Add{" "}
@@ -180,6 +151,14 @@ export const PurchaseForm = () => {
                       ) + " credits"
                     : null}
                 </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Minimum top up amount is {formatCurrency(100)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Maximum top up amount is {formatCurrency(10000)}
+                </p>
               </div>
               {topUpAmount && (
                 <p className="text-sm text-muted-foreground">

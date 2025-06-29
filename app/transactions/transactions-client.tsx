@@ -142,14 +142,9 @@ const TransactionsClient = ({ initialSessions }: TransactionsClientProps) => {
       .length,
   };
 
-  const totalCredits = safeSessions
-    .filter((session) => session.status === "complete")
-    .reduce((total, session) => {
-      const quantity =
-        Math.floor((session.line_items?.data?.[0]?.amount_total || 0) / 100) *
-          0.69 || 0;
-      return total + quantity;
-    }, 0);
+  const totalCredits = safeSessions.reduce((total, session) => {
+    return total + Number(session.metadata?.credits || 0);
+  }, 0);
 
   const totalAmountSpent = safeSessions
     .filter((session) => session.status === "complete")
@@ -289,7 +284,9 @@ const TransactionsClient = ({ initialSessions }: TransactionsClientProps) => {
                   <p className="text-sm font-medium text-muted-foreground">
                     Credits Purchased
                   </p>
-                  <p className="text-2xl font-bold">{totalCredits}</p>
+                  <p className="text-2xl font-bold">
+                    {totalCredits.toFixed(2)}
+                  </p>
                 </div>
                 <FaCoins className="w-8 h-8 text-yellow-500" />
               </div>

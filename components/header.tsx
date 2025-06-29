@@ -17,25 +17,9 @@ import {
 } from "./ui/sheet";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { getCredits } from "@/lib/actions";
-import { useEffect, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
 
-const Header = () => {
-  const [credits, setCredits] = useState(0);
-  const [isCreditsLoading, setIsCreditsLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchCredits = async () => {
-      setIsCreditsLoading(true);
-      const credits = await getCredits();
-      setCredits(credits!);
-      setIsCreditsLoading(false);
-    };
-
-    fetchCredits();
-  }, []);
-
+const Header = ({ credits }: { credits: number }) => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container p-4 max-w-7xl mx-auto flex h-14 items-center">
@@ -90,17 +74,13 @@ const Header = () => {
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
-                  {isCreditsLoading ? (
-                    <Skeleton className="w-14 h-10 rounded-md" />
-                  ) : (
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50"
-                    >
-                      <GiTwoCoins className="h-5 w-5 text-yellow-500" />
-                      <span className="text-sm font-medium">{credits}</span>
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50"
+                  >
+                    <GiTwoCoins className="h-5 w-5 text-yellow-500" />
+                    <span className="text-sm font-medium">{credits}</span>
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                   <div className="space-y-2">

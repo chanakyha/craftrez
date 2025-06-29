@@ -42,4 +42,8 @@ type Session = {
       quantity: number;
     }>;
   };
+  metadata?: {
+    credits: string;
+    clerkId: string;
+  };
 };
