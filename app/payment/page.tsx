@@ -496,19 +496,24 @@ const PaymentPage = async ({
               <CardContent>
                 <div className="space-y-3 sm:space-y-4">
                   {Object.entries(serializedSession?.metadata).map(
-                    ([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2"
-                      >
-                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">
-                          {key}:
-                        </span>
-                        <span className="text-xs sm:text-sm font-mono bg-muted px-2 py-1 rounded break-all">
-                          {value as string}
-                        </span>
-                      </div>
-                    )
+                    ([key, value]) => {
+                      if (key === "clerkId") {
+                        return null;
+                      }
+                      return (
+                        <div
+                          key={key}
+                          className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2"
+                        >
+                          <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+                            {key}:
+                          </span>
+                          <span className="text-xs sm:text-sm font-mono bg-muted px-2 py-1 rounded break-all">
+                            {value as string}
+                          </span>
+                        </div>
+                      );
+                    }
                   )}
                 </div>
               </CardContent>
