@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Code } from "lucide-react";
+import { Plus, Edit, Code, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +34,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import {
+  deleteProjectRecord,
+  handleProjectRecord,
+  updateProjectRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const projectFormSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -45,6 +51,7 @@ const projectFormSchema = z.object({
     required_error: "End date is required",
   }),
   description: z.string().optional(),
+  id: z.string().optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -55,7 +62,8 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ projects }: ProjectCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -64,11 +72,26 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
       start_date: new Date(),
       end_date: new Date(),
       description: "",
+      id: undefined,
     },
   });
 
-  const onSubmit = (data: ProjectFormValues) => {
-    console.log(data);
+  const onSubmit = async (data: ProjectFormValues) => {
+    try {
+      setIsLoading(true);
+      if (data.id) {
+        await updateProjectRecord(data.id, data as unknown as Project);
+        toast.success("Project record updated successfully");
+      } else {
+        await handleProjectRecord(data as unknown as Project);
+        toast.success("Project record added successfully");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Project record addition failed");
+    } finally {
+      setIsLoading(false);
+    }
     setDialogOpen(false);
     form.reset();
   };
@@ -83,17 +106,18 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              size="sm"
+              size="icon"
               variant="outline"
               onClick={() => setDialogOpen(true)}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Project
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Project</DialogTitle>
+              <DialogTitle>
+                {form.getValues("id") ? "Edit Project" : "Add Project"}
+              </DialogTitle>
               <DialogDescription>
                 Add a new project to your profile.
               </DialogDescription>
@@ -154,7 +178,6 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                                 ) : (
                                   <span>Pick a date</span>
                                 )}
-                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
@@ -196,7 +219,6 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                                 ) : (
                                   <span>Pick a date</span>
                                 )}
-                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
@@ -243,9 +265,25 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? "Adding..." : "Add Project"}
-                  </Button>
+                  {form.getValues("id") ? (
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || isLoading}
+                      isLoading={isLoading}
+                      loadingText="Updating..."
+                    >
+                      {isLoading ? "Updating..." : "Update Project"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || isLoading}
+                      isLoading={isLoading}
+                      loadingText="Adding..."
+                    >
+                      {isLoading ? "Adding..." : "Add Project"}
+                    </Button>
+                  )}
                 </DialogFooter>
               </form>
             </Form>
@@ -276,9 +314,66 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                     <p className="text-sm mt-2">{project.description}</p>
                   )}
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-end">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      form.reset();
+                      form.setValue("name", project.name);
+                      form.setValue("built_for", project.built_for);
+                      form.setValue("start_date", new Date(project.start_date));
+                      form.setValue("end_date", new Date(project.end_date));
+                      form.setValue("description", project.description);
+                      form.setValue("id", project.id.toString());
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Dialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <Trash className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Delete Project</DialogTitle>
+                      </DialogHeader>
+                      <DialogDescription>
+                        Are you sure you want to delete this project?
+                      </DialogDescription>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeleteDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          isLoading={isLoading}
+                          loadingText="Deleting..."
+                          onClick={async () => {
+                            setIsLoading(true);
+                            await deleteProjectRecord(project.id.toString());
+                            toast.success(
+                              "Project record deleted successfully"
+                            );
+                            setIsLoading(false);
+                            setDeleteDialogOpen(false);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
           ))

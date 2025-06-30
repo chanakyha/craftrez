@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Briefcase } from "lucide-react";
+import { Plus, Edit, Briefcase, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,9 +34,16 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import {
+  deleteExperienceRecord,
+  handleExperienceRecord,
+  updateExperienceRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 // Experience Form Schema
 const experienceFormSchema = z.object({
+  id: z.string().optional(),
   company_name: z.string().min(1, "Company name is required"),
   position: z.string().min(1, "Position is required"),
   start_date: z.date({
@@ -57,10 +64,12 @@ interface ExperienceCardProps {
 
 export default function ExperienceCard({ experiences }: ExperienceCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const form = useForm<ExperienceFormValues>({
     resolver: zodResolver(experienceFormSchema),
     defaultValues: {
+      id: undefined,
       company_name: "",
       position: "",
       start_date: new Date(),
@@ -70,10 +79,31 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
     },
   });
 
-  const onSubmit = (data: ExperienceFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: ExperienceFormValues) => {
+    try {
+      setIsLoading(true);
+      if (data.id) {
+        await updateExperienceRecord(data.id, data as unknown as Experience);
+      } else {
+        await handleExperienceRecord(data as unknown as Experience);
+      }
+      setDialogOpen(false);
+      form.reset();
+      toast.success(
+        data.id
+          ? "Experience record updated successfully"
+          : "Experience record added successfully"
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        data.id
+          ? "Experience record update failed"
+          : "Experience record addition failed"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,12 +116,11 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              size="sm"
+              size="icon"
               variant="outline"
               onClick={() => setDialogOpen(true)}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Experience
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
@@ -156,7 +185,6 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                                 ) : (
                                   <span>Pick a date</span>
                                 )}
-                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
@@ -198,7 +226,6 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                                 ) : (
                                   <span>Pick a date</span>
                                 )}
-                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
@@ -258,10 +285,13 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting
-                      ? "Adding..."
-                      : "Add Experience"}
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                    loadingText="Saving..."
+                  >
+                    Save Experience
                   </Button>
                 </DialogFooter>
               </form>
@@ -293,9 +323,63 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                     <p className="text-sm mt-2">{experience.description}</p>
                   )}
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-end">
+                  <Dialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <Trash className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Delete Experience</DialogTitle>
+                      </DialogHeader>
+                      <DialogDescription>
+                        Are you sure you want to delete this experience?
+                      </DialogDescription>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeleteDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          isLoading={isLoading}
+                          loadingText="Deleting..."
+                          onClick={async () => {
+                            setIsLoading(true);
+                            setDeleteDialogOpen(false);
+                            await deleteExperienceRecord(
+                              experience.id.toString()
+                            );
+                            toast.success(
+                              "Experience record deleted successfully"
+                            );
+                            setIsLoading(false);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      form.reset();
+                      form.setValue("id", experience.id.toString());
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))

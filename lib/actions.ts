@@ -71,3 +71,83 @@ export const deleteEducationRecord = async (id: string) => {
 
   revalidateTag("profile");
 };
+
+export const handleExperienceRecord = async (data: Experience) => {
+  const user = await currentUser();
+  if (!user) return;
+  await prisma.experience.create({
+    data: {
+      company_name: data.company_name,
+      position: data.position,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      place: data.place,
+      description: data.description,
+      ownerId: user.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+  revalidateTag("profile");
+};
+
+export const updateExperienceRecord = async (id: string, data: Experience) => {
+  await prisma.experience.update({
+    where: { id: id },
+    data: {
+      company_name: data.company_name,
+      position: data.position,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      place: data.place,
+      description: data.description,
+    },
+  });
+  revalidateTag("profile");
+};
+
+export const deleteExperienceRecord = async (id: string) => {
+  await prisma.experience.delete({
+    where: { id: id },
+  });
+  revalidateTag("profile");
+};
+
+export const handleProjectRecord = async (data: Project) => {
+  const user = await currentUser();
+  if (!user) return;
+  await prisma.project.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      built_for: data.built_for,
+      ownerId: user.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+  revalidateTag("profile");
+};
+
+export const updateProjectRecord = async (id: string, data: Project) => {
+  await prisma.project.update({
+    where: { id: id },
+    data: {
+      name: data.name,
+      description: data.description,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      built_for: data.built_for,
+    },
+  });
+  revalidateTag("profile");
+};
+
+export const deleteProjectRecord = async (id: string) => {
+  await prisma.project.delete({
+    where: { id: id },
+  });
+  revalidateTag("profile");
+};
