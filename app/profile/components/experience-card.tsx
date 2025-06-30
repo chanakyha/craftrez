@@ -84,8 +84,10 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
       setIsLoading(true);
       if (data.id) {
         await updateExperienceRecord(data.id, data as unknown as Experience);
+        toast.success("Experience record updated successfully");
       } else {
         await handleExperienceRecord(data as unknown as Experience);
+        toast.success("Experience record added successfully");
       }
       setDialogOpen(false);
       form.reset();
@@ -125,7 +127,9 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Experience</DialogTitle>
+              <DialogTitle>
+                {form.getValues("id") ? "Edit Experience" : "Add Experience"}
+              </DialogTitle>
               <DialogDescription>
                 Add a new work experience to your profile.
               </DialogDescription>
@@ -197,7 +201,6 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                                 date > new Date() ||
                                 date < new Date("1900-01-01")
                               }
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -238,7 +241,6 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                                 date > new Date() ||
                                 date < new Date("1900-01-01")
                               }
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -285,14 +287,25 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    isLoading={isLoading}
-                    loadingText="Saving..."
-                  >
-                    Save Experience
-                  </Button>
+                  {form.getValues("id") ? (
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || isLoading}
+                      isLoading={isLoading}
+                      loadingText="Updating..."
+                    >
+                      {isLoading ? "Updating..." : "Update Experience"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || isLoading}
+                      isLoading={isLoading}
+                      loadingText="Adding..."
+                    >
+                      {isLoading ? "Adding..." : "Add Experience"}
+                    </Button>
+                  )}
                 </DialogFooter>
               </form>
             </Form>
@@ -374,6 +387,15 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                     onClick={() => {
                       form.reset();
                       form.setValue("id", experience.id.toString());
+                      form.setValue("company_name", experience.company_name);
+                      form.setValue("position", experience.position);
+                      form.setValue(
+                        "start_date",
+                        new Date(experience.start_date)
+                      );
+                      form.setValue("end_date", new Date(experience.end_date));
+                      form.setValue("description", experience.description);
+                      form.setValue("place", experience.place);
                       setDialogOpen(true);
                     }}
                   >
