@@ -151,3 +151,41 @@ export const deleteProjectRecord = async (id: string) => {
   });
   revalidateTag("profile");
 };
+
+export const handleCertificationRecord = async (data: Certification) => {
+  const user = await currentUser();
+  if (!user) return;
+  await prisma.certification.create({
+    data: {
+      name: data.name,
+      issuer: data.issuer,
+      issue_date: data.issue_date,
+      ownerId: user.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+  revalidateTag("profile");
+};
+
+export const updateCertificationRecord = async (
+  id: string,
+  data: Certification
+) => {
+  await prisma.certification.update({
+    where: { id: id },
+    data: {
+      name: data.name,
+      issuer: data.issuer,
+      issue_date: data.issue_date,
+    },
+  });
+  revalidateTag("profile");
+};
+
+export const deleteCertificationRecord = async (id: string) => {
+  await prisma.certification.delete({
+    where: { id: id },
+  });
+  revalidateTag("profile");
+};

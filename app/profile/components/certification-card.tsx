@@ -13,7 +13,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Award } from "lucide-react";
+import { Plus, Edit, Award, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +33,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import {
+  deleteCertificationRecord,
+  handleCertificationRecord,
+  updateCertificationRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const certificationFormSchema = z.object({
   name: z.string().min(1, "Certification name is required"),
@@ -40,6 +46,7 @@ const certificationFormSchema = z.object({
   issue_date: z.date({
     required_error: "Issue date is required",
   }),
+  id: z.string().optional(),
 });
 
 type CertificationFormValues = z.infer<typeof certificationFormSchema>;
@@ -52,20 +59,39 @@ export default function CertificationCard({
   certifications,
 }: CertificationCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<CertificationFormValues>({
     resolver: zodResolver(certificationFormSchema),
     defaultValues: {
       name: "",
       issuer: "",
       issue_date: new Date(),
+      id: undefined,
     },
   });
 
-  const onSubmit = (data: CertificationFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: CertificationFormValues) => {
+    try {
+      setIsLoading(true);
+      if (data.id) {
+        await updateCertificationRecord(
+          data.id,
+          data as unknown as Certification
+        );
+        toast.success("Certification record updated successfully");
+      } else {
+        await handleCertificationRecord(data as unknown as Certification);
+        toast.success("Certification record added successfully");
+      }
+      setDialogOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to add certification record");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,17 +104,20 @@ export default function CertificationCard({
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              size="sm"
+              size="icon"
               variant="outline"
               onClick={() => setDialogOpen(true)}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Certification
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Certification</DialogTitle>
+              <DialogTitle>
+                {form.getValues("id")
+                  ? "Edit Certification"
+                  : "Add Certification"}
+              </DialogTitle>
               <DialogDescription>
                 Add a new certification to your profile.
               </DialogDescription>
@@ -148,7 +177,6 @@ export default function CertificationCard({
                               ) : (
                                 <span>Pick a date</span>
                               )}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -160,7 +188,6 @@ export default function CertificationCard({
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }
-                            initialFocus
                           />
                         </PopoverContent>
                       </Popover>
@@ -176,11 +203,25 @@ export default function CertificationCard({
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting
-                      ? "Adding..."
-                      : "Add Certification"}
-                  </Button>
+                  {form.getValues("id") ? (
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || isLoading}
+                      isLoading={isLoading}
+                      loadingText="Updating..."
+                    >
+                      {isLoading ? "Updating..." : "Update Certification"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={form.formState.isSubmitting || isLoading}
+                      isLoading={isLoading}
+                      loadingText="Adding..."
+                    >
+                      {isLoading ? "Adding..." : "Add Certification"}
+                    </Button>
+                  )}
                 </DialogFooter>
               </form>
             </Form>
@@ -209,9 +250,69 @@ export default function CertificationCard({
                     {format(new Date(certification.issue_date), "MMM yyyy")}
                   </p>
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-end">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      form.reset();
+                      form.setValue("id", certification.id.toString());
+                      form.setValue("name", certification.name);
+                      form.setValue("issuer", certification.issuer);
+                      form.setValue(
+                        "issue_date",
+                        new Date(certification.issue_date)
+                      );
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Dialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <Trash className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Delete Certification</DialogTitle>
+                      </DialogHeader>
+                      <DialogDescription>
+                        Are you sure you want to delete this certification?
+                      </DialogDescription>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeleteDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          isLoading={isLoading}
+                          loadingText="Deleting..."
+                          onClick={async () => {
+                            setIsLoading(true);
+                            await deleteCertificationRecord(
+                              certification.id.toString()
+                            );
+                            toast.success(
+                              "Certification record deleted successfully"
+                            );
+                            setIsLoading(false);
+                            setDeleteDialogOpen(false);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
           ))
