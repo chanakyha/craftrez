@@ -148,15 +148,29 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
   const currentSkills = form.watch("skills");
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wrench className="h-5 w-5" />
-          <CardTitle>Skills</CardTitle>
+    <Card className="overflow-hidden border border-border/50 bg-card shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Wrench className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-semibold text-foreground">
+              Skills
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Your technical expertise and competencies
+            </p>
+          </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="icon" variant="outline" onClick={handleAddNew}>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleAddNew}
+              className="hover:bg-primary/10 hover:border-primary/20"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -257,49 +271,74 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-6 space-y-4">
         {skills.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No skills added yet</p>
-            <p className="text-sm">
-              Add your skills to showcase your expertise
+          <div className="text-center py-12">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+              <Wrench className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No skills added yet
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              Add your skills to showcase your expertise and capabilities
             </p>
           </div>
         ) : (
-          skills.map((skill) => (
-            <div key={skill.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2 flex-1">
-                  <h4 className="font-semibold">{skill.category}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {skill.skills.map((skillName, index) => (
-                      <Badge key={index} variant="secondary">
-                        {skillName}
-                      </Badge>
-                    ))}
+          <div className="grid gap-4">
+            {skills.map((skill) => (
+              <div
+                key={skill.id}
+                className="group relative overflow-hidden rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-all duration-300 hover:shadow-sm hover:border-primary/20"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors mt-1">
+                          <Wrench className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="space-y-3 flex-1">
+                          <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors text-lg">
+                            {skill.category}
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {skill.skills.map((skillName, index) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
+                              >
+                                {skillName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(skill)}
+                        className="hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(skill)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleEdit(skill)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleDeleteClick(skill)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardContent>
 

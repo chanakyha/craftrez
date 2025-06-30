@@ -144,15 +144,29 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5" />
-          <CardTitle>Experience</CardTitle>
+    <Card className="overflow-hidden border border-border/50 bg-card shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Briefcase className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-semibold text-foreground">
+              Experience
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Your work history and professional experience
+            </p>
+          </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="icon" variant="outline" onClick={handleAddNew}>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleAddNew}
+              className="hover:bg-primary/10 hover:border-primary/20"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -345,63 +359,107 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-6 space-y-4">
         {experiences.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No experience added yet</p>
-            <p className="text-sm">Add your work experience to get started</p>
+          <div className="text-center py-12">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+              <Briefcase className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No experience added yet
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              Add your work experience to showcase your professional journey
+            </p>
           </div>
         ) : (
-          experiences.map((experience) => (
-            <div key={experience.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2 flex-1">
-                  <h4 className="font-semibold">{experience.position}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {experience.company_name} • {experience.place}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(experience.start_date), "MMM yyyy")} -{" "}
-                    {format(new Date(experience.end_date), "MMM yyyy")}
-                  </p>
-                  {experience.description && (
-                    <p className="text-sm mt-2">{experience.description}</p>
-                  )}
-                </div>
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      form.reset();
-                      form.setValue("id", experience.id.toString());
-                      form.setValue("company_name", experience.company_name);
-                      form.setValue("position", experience.position);
-                      form.setValue(
-                        "start_date",
-                        new Date(experience.start_date)
-                      );
-                      form.setValue("end_date", new Date(experience.end_date));
-                      form.setValue("description", experience.description);
-                      form.setValue("place", experience.place);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDeleteClick(experience)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+          <div className="grid gap-4">
+            {experiences.map((experience) => (
+              <div
+                key={experience.id}
+                className="group relative overflow-hidden rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-all duration-300 hover:shadow-sm hover:border-primary/20"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors mt-1">
+                          <Briefcase className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors text-lg">
+                            {experience.position}
+                          </h4>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="font-medium">
+                              {experience.company_name}
+                            </span>
+                            <span>•</span>
+                            <span>{experience.place}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>
+                              {format(
+                                new Date(experience.start_date),
+                                "MMM yyyy"
+                              )}{" "}
+                              -{" "}
+                              {format(
+                                new Date(experience.end_date),
+                                "MMM yyyy"
+                              )}
+                            </span>
+                          </div>
+                          {experience.description && (
+                            <p className="text-sm text-muted-foreground leading-relaxed mt-3 p-3 bg-muted/30 rounded-lg">
+                              {experience.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          form.reset();
+                          form.setValue("id", experience.id.toString());
+                          form.setValue(
+                            "company_name",
+                            experience.company_name
+                          );
+                          form.setValue("position", experience.position);
+                          form.setValue(
+                            "start_date",
+                            new Date(experience.start_date)
+                          );
+                          form.setValue(
+                            "end_date",
+                            new Date(experience.end_date)
+                          );
+                          form.setValue("description", experience.description);
+                          form.setValue("place", experience.place);
+                          setDialogOpen(true);
+                        }}
+                        className="hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(experience)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardContent>
 

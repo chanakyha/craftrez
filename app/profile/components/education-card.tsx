@@ -153,11 +153,20 @@ export default function EducationCard({ educations }: EducationCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <GraduationCap className="h-5 w-5" />
-          <CardTitle>Education</CardTitle>
+    <Card className="overflow-hidden border border-border/50 bg-card shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <GraduationCap className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-semibold text-foreground">
+              Education
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Your academic background and qualifications
+            </p>
+          </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -165,8 +174,9 @@ export default function EducationCard({ educations }: EducationCardProps) {
               size="icon"
               variant="outline"
               onClick={() => setDialogOpen(true)}
+              className="hover:bg-primary/10 hover:border-primary/20"
             >
-              <Plus className="h-4 w-4" />{" "}
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
@@ -377,76 +387,122 @@ export default function EducationCard({ educations }: EducationCardProps) {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-6 space-y-4">
         {educations.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No education added yet</p>
-            <p className="text-sm">
-              Add your educational background to get started
+          <div className="text-center py-12">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+              <GraduationCap className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No education added yet
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              Add your educational background to showcase your academic journey
             </p>
           </div>
         ) : (
-          educations.map((education) => (
-            <div key={education.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2 flex-1">
-                  <h4 className="font-semibold">{education.degree}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {education.school_name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {education.place}
-                  </p>
-                  <div className="flex gap-2 text-xs text-muted-foreground">
-                    <span>
-                      {format(new Date(education.start_date), "MMM yyyy")}
-                    </span>
-                    <span>-</span>
-                    <span>
-                      {format(new Date(education.end_date), "MMM yyyy")}
-                    </span>
+          <div className="grid gap-4">
+            {educations.map((education) => (
+              <div
+                key={education.id}
+                className="group relative overflow-hidden rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-all duration-300 hover:shadow-sm hover:border-primary/20"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors mt-1">
+                          <GraduationCap className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors text-lg">
+                            {education.degree}
+                          </h4>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              {education.school_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {education.place}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>
+                                {format(
+                                  new Date(education.start_date),
+                                  "MMM yyyy"
+                                )}{" "}
+                                -{" "}
+                                {format(
+                                  new Date(education.end_date),
+                                  "MMM yyyy"
+                                )}
+                              </span>
+                            </div>
+                            {education.marks && education.marksOutof && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-muted-foreground">
+                                  Marks:
+                                </span>
+                                <span className="font-medium text-primary">
+                                  {education.marks}/{education.marksOutof}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  (
+                                  {Math.round(
+                                    (education.marks / education.marksOutof) *
+                                      100
+                                  )}
+                                  %)
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setDialogOpen(true);
+                          form.reset();
+                          form.setValue("school_name", education.school_name);
+                          form.setValue("degree", education.degree);
+                          form.setValue("place", education.place);
+                          form.setValue(
+                            "start_date",
+                            new Date(education.start_date)
+                          );
+                          form.setValue(
+                            "end_date",
+                            new Date(education.end_date)
+                          );
+                          form.setValue("marks", education.marks || 0);
+                          form.setValue(
+                            "marksOutof",
+                            education.marksOutof || 0
+                          );
+                          form.setValue("id", education.id.toString());
+                        }}
+                        className="hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(education)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  {education.marks && (
-                    <p className="text-sm text-muted-foreground">
-                      Marks: {education.marks}/{education.marksOutof}
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      setDialogOpen(true);
-                      form.reset();
-                      form.setValue("school_name", education.school_name);
-                      form.setValue("degree", education.degree);
-                      form.setValue("place", education.place);
-                      form.setValue(
-                        "start_date",
-                        new Date(education.start_date)
-                      );
-                      form.setValue("end_date", new Date(education.end_date));
-                      form.setValue("marks", education.marks || 0);
-                      form.setValue("marksOutof", education.marksOutof || 0);
-                      form.setValue("id", education.id.toString());
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDeleteClick(education)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardContent>
 

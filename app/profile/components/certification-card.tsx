@@ -135,15 +135,29 @@ export default function CertificationCard({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Award className="h-5 w-5" />
-          <CardTitle>Certifications</CardTitle>
+    <Card className="overflow-hidden border border-border/50 bg-card shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Award className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-semibold text-foreground">
+              Certifications
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Your professional certifications and credentials
+            </p>
+          </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="icon" variant="outline" onClick={handleAddNew}>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleAddNew}
+              className="hover:bg-primary/10 hover:border-primary/20"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -266,58 +280,84 @@ export default function CertificationCard({
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-6 space-y-4">
         {certifications.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No certifications added yet</p>
-            <p className="text-sm">
-              Add your certifications to showcase your credentials
+          <div className="text-center py-12">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+              <Award className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No certifications added yet
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              Add your certifications to showcase your professional credentials
             </p>
           </div>
         ) : (
-          certifications.map((certification) => (
-            <div key={certification.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2 flex-1">
-                  <h4 className="font-semibold">{certification.name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Issued by: {certification.issuer}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(certification.issue_date), "MMM yyyy")}
-                  </p>
-                </div>
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      form.reset();
-                      form.setValue("id", certification.id.toString());
-                      form.setValue("name", certification.name);
-                      form.setValue("issuer", certification.issuer);
-                      form.setValue(
-                        "issue_date",
-                        new Date(certification.issue_date)
-                      );
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDeleteClick(certification)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+          <div className="grid gap-4">
+            {certifications.map((certification) => (
+              <div
+                key={certification.id}
+                className="group relative overflow-hidden rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-all duration-300 hover:shadow-sm hover:border-primary/20"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors mt-1">
+                          <Award className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors text-lg">
+                            {certification.name}
+                          </h4>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              Issued by: {certification.issuer}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(
+                                new Date(certification.issue_date),
+                                "MMM yyyy"
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          form.reset();
+                          form.setValue("id", certification.id.toString());
+                          form.setValue("name", certification.name);
+                          form.setValue("issuer", certification.issuer);
+                          form.setValue(
+                            "issue_date",
+                            new Date(certification.issue_date)
+                          );
+                          setDialogOpen(true);
+                        }}
+                        className="hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(certification)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardContent>
 
