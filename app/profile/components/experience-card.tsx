@@ -14,7 +14,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Briefcase, Trash } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Briefcase, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,8 +74,11 @@ interface ExperienceCardProps {
 
 export default function ExperienceCard({ experiences }: ExperienceCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [deletingExperience, setDeletingExperience] =
+    useState<Experience | null>(null);
+
   const form = useForm<ExperienceFormValues>({
     resolver: zodResolver(experienceFormSchema),
     defaultValues: {
@@ -91,11 +104,6 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
       }
       setDialogOpen(false);
       form.reset();
-      toast.success(
-        data.id
-          ? "Experience record updated successfully"
-          : "Experience record added successfully"
-      );
     } catch (error) {
       console.error(error);
       toast.error(
@@ -108,6 +116,33 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
     }
   };
 
+  const handleDeleteClick = (experience: Experience) => {
+    setDeletingExperience(experience);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingExperience) return;
+
+    try {
+      setIsLoading(true);
+      await deleteExperienceRecord(deletingExperience.id.toString());
+      toast.success("Experience record deleted successfully");
+      setDeleteDialogOpen(false);
+      setDeletingExperience(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Experience record not deleted");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddNew = () => {
+    form.reset();
+    setDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -117,11 +152,7 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -131,7 +162,9 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                 {form.getValues("id") ? "Edit Experience" : "Add Experience"}
               </DialogTitle>
               <DialogDescription>
-                Add a new work experience to your profile.
+                {form.getValues("id")
+                  ? "Edit the experience details."
+                  : "Add a new work experience to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -294,7 +327,7 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                       isLoading={isLoading}
                       loadingText="Updating..."
                     >
-                      {isLoading ? "Updating..." : "Update Experience"}
+                      Update Experience
                     </Button>
                   ) : (
                     <Button
@@ -303,7 +336,7 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                       isLoading={isLoading}
                       loadingText="Adding..."
                     >
-                      {isLoading ? "Adding..." : "Add Experience"}
+                      Add Experience
                     </Button>
                   )}
                 </DialogFooter>
@@ -323,7 +356,7 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
           experiences.map((experience) => (
             <div key={experience.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{experience.position}</h4>
                   <p className="text-sm text-muted-foreground">
                     {experience.company_name} • {experience.place}
@@ -336,51 +369,7 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                     <p className="text-sm mt-2">{experience.description}</p>
                   )}
                 </div>
-                <div className="flex justify-end">
-                  <Dialog
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button size="icon" variant="ghost">
-                        <Trash className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Delete Experience</DialogTitle>
-                      </DialogHeader>
-                      <DialogDescription>
-                        Are you sure you want to delete this experience?
-                      </DialogDescription>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => setDeleteDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          isLoading={isLoading}
-                          loadingText="Deleting..."
-                          onClick={async () => {
-                            setIsLoading(true);
-                            setDeleteDialogOpen(false);
-                            await deleteExperienceRecord(
-                              experience.id.toString()
-                            );
-                            toast.success(
-                              "Experience record deleted successfully"
-                            );
-                            setIsLoading(false);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                <div className="flex gap-2 ml-4">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -401,12 +390,42 @@ export default function ExperienceCard({ experiences }: ExperienceCardProps) {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(experience)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              experience record for &ldquo;{deletingExperience?.position}&rdquo;
+              at &ldquo;{deletingExperience?.company_name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -14,7 +14,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, BookOpen } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, BookOpen, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -26,6 +36,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { z } from "zod";
+import {
+  handlePublicationRecord,
+  updatePublicationRecord,
+  deletePublicationRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const publicationFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -48,6 +64,11 @@ export default function PublicationCard({
   publications,
 }: PublicationCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingPublication, setEditingPublication] =
+    useState<Publication | null>(null);
+  const [deletingPublication, setDeletingPublication] =
+    useState<Publication | null>(null);
 
   const form = useForm<PublicationFormValues>({
     resolver: zodResolver(publicationFormSchema),
@@ -60,10 +81,65 @@ export default function PublicationCard({
     },
   });
 
-  const onSubmit = (data: PublicationFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: PublicationFormValues) => {
+    try {
+      if (editingPublication) {
+        await updatePublicationRecord(editingPublication.id.toString(), data);
+        toast.success("Publication updated successfully!");
+      } else {
+        await handlePublicationRecord(data);
+        toast.success("Publication added successfully!");
+      }
+      setDialogOpen(false);
+      setEditingPublication(null);
+      form.reset();
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleEdit = (publication: Publication) => {
+    setEditingPublication(publication);
+    form.reset({
+      title: publication.title,
+      author: publication.author,
+      publisher: publication.publisher,
+      year: publication.year,
+      description: publication.description || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (publication: Publication) => {
+    setDeletingPublication(publication);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingPublication) return;
+
+    try {
+      await deletePublicationRecord(deletingPublication.id.toString());
+      toast.success("Publication deleted successfully!");
+      setDeleteDialogOpen(false);
+      setDeletingPublication(null);
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingPublication(null);
+    form.reset({
+      title: "",
+      author: "",
+      publisher: "",
+      year: new Date().getFullYear(),
+      description: "",
+    });
+    setDialogOpen(true);
   };
 
   return (
@@ -75,20 +151,19 @@ export default function PublicationCard({
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Publication
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Publication</DialogTitle>
+              <DialogTitle>
+                {editingPublication ? "Edit Publication" : "Add Publication"}
+              </DialogTitle>
               <DialogDescription>
-                Add a new publication to your profile.
+                {editingPublication
+                  ? "Edit the publication details."
+                  : "Add a new publication to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -189,7 +264,11 @@ export default function PublicationCard({
                   </Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting
-                      ? "Adding..."
+                      ? editingPublication
+                        ? "Updating..."
+                        : "Adding..."
+                      : editingPublication
+                      ? "Update Publication"
                       : "Add Publication"}
                   </Button>
                 </DialogFooter>
@@ -211,7 +290,7 @@ export default function PublicationCard({
           publications.map((publication) => (
             <div key={publication.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{publication.title}</h4>
                   <p className="text-sm text-muted-foreground">
                     Author: {publication.author}
@@ -226,14 +305,49 @@ export default function PublicationCard({
                     <p className="text-sm mt-2">{publication.description}</p>
                   )}
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleEdit(publication)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(publication)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              publication &ldquo;{deletingPublication?.title}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

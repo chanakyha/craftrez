@@ -14,7 +14,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Code, Trash } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Code, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,6 +74,8 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -96,6 +108,33 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
     form.reset();
   };
 
+  const handleDeleteClick = (project: Project) => {
+    setDeletingProject(project);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingProject) return;
+
+    try {
+      setIsLoading(true);
+      await deleteProjectRecord(deletingProject.id.toString());
+      toast.success("Project record deleted successfully");
+      setDeleteDialogOpen(false);
+      setDeletingProject(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Project record not deleted");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddNew = () => {
+    form.reset();
+    setDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -105,11 +144,7 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -119,7 +154,9 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                 {form.getValues("id") ? "Edit Project" : "Add Project"}
               </DialogTitle>
               <DialogDescription>
-                Add a new project to your profile.
+                {form.getValues("id")
+                  ? "Edit the project details."
+                  : "Add a new project to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -272,7 +309,7 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                       isLoading={isLoading}
                       loadingText="Updating..."
                     >
-                      {isLoading ? "Updating..." : "Update Project"}
+                      Update Project
                     </Button>
                   ) : (
                     <Button
@@ -281,7 +318,7 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                       isLoading={isLoading}
                       loadingText="Adding..."
                     >
-                      {isLoading ? "Adding..." : "Add Project"}
+                      Add Project
                     </Button>
                   )}
                 </DialogFooter>
@@ -301,7 +338,7 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
           projects.map((project) => (
             <div key={project.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{project.name}</h4>
                   <p className="text-sm text-muted-foreground">
                     Built for: {project.built_for}
@@ -314,7 +351,7 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                     <p className="text-sm mt-2">{project.description}</p>
                   )}
                 </div>
-                <div className="flex justify-end">
+                <div className="flex gap-2 ml-4">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -331,54 +368,41 @@ export default function ProjectCard({ projects }: ProjectCardProps) {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Dialog
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(project)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
                   >
-                    <DialogTrigger asChild>
-                      <Button size="icon" variant="ghost">
-                        <Trash className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Delete Project</DialogTitle>
-                      </DialogHeader>
-                      <DialogDescription>
-                        Are you sure you want to delete this project?
-                      </DialogDescription>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => setDeleteDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          isLoading={isLoading}
-                          loadingText="Deleting..."
-                          onClick={async () => {
-                            setIsLoading(true);
-                            await deleteProjectRecord(project.id.toString());
-                            toast.success(
-                              "Project record deleted successfully"
-                            );
-                            setIsLoading(false);
-                            setDeleteDialogOpen(false);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              project &ldquo;{deletingProject?.name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

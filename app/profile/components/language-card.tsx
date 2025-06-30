@@ -14,7 +14,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Globe } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Globe, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -33,6 +43,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { z } from "zod";
+import {
+  handleLanguageRecord,
+  updateLanguageRecord,
+  deleteLanguageRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const languageFormSchema = z.object({
   name: z.string().min(1, "Language name is required"),
@@ -56,6 +72,11 @@ const proficiencyLevels = [
 
 export default function LanguageCard({ languages }: LanguageCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingLanguage, setEditingLanguage] = useState<Language | null>(null);
+  const [deletingLanguage, setDeletingLanguage] = useState<Language | null>(
+    null
+  );
 
   const form = useForm<LanguageFormValues>({
     resolver: zodResolver(languageFormSchema),
@@ -65,10 +86,59 @@ export default function LanguageCard({ languages }: LanguageCardProps) {
     },
   });
 
-  const onSubmit = (data: LanguageFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: LanguageFormValues) => {
+    try {
+      if (editingLanguage) {
+        await updateLanguageRecord(editingLanguage.id.toString(), data);
+        toast.success("Language updated successfully!");
+      } else {
+        await handleLanguageRecord(data);
+        toast.success("Language added successfully!");
+      }
+      setDialogOpen(false);
+      setEditingLanguage(null);
+      form.reset();
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleEdit = (language: Language) => {
+    setEditingLanguage(language);
+    form.reset({
+      name: language.name,
+      proficiency: language.proficiency,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (language: Language) => {
+    setDeletingLanguage(language);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingLanguage) return;
+
+    try {
+      await deleteLanguageRecord(deletingLanguage.id.toString());
+      toast.success("Language deleted successfully!");
+      setDeleteDialogOpen(false);
+      setDeletingLanguage(null);
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingLanguage(null);
+    form.reset({
+      name: "",
+      proficiency: "",
+    });
+    setDialogOpen(true);
   };
 
   return (
@@ -80,20 +150,19 @@ export default function LanguageCard({ languages }: LanguageCardProps) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Language
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Language</DialogTitle>
+              <DialogTitle>
+                {editingLanguage ? "Edit Language" : "Add Language"}
+              </DialogTitle>
               <DialogDescription>
-                Add a new language to your profile.
+                {editingLanguage
+                  ? "Edit the language details."
+                  : "Add a new language to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -150,7 +219,13 @@ export default function LanguageCard({ languages }: LanguageCardProps) {
                     Cancel
                   </Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? "Adding..." : "Add Language"}
+                    {form.formState.isSubmitting
+                      ? editingLanguage
+                        ? "Updating..."
+                        : "Adding..."
+                      : editingLanguage
+                      ? "Update Language"
+                      : "Add Language"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -174,14 +249,47 @@ export default function LanguageCard({ languages }: LanguageCardProps) {
                 <Badge variant="secondary">
                   {language.name} - {language.proficiency}
                 </Badge>
-                <Button size="sm" variant="ghost">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleEdit(language)}
+                >
                   <Edit className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleDeleteClick(language)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             ))}
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              language &ldquo;{deletingLanguage?.name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

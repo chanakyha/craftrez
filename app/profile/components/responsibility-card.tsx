@@ -13,7 +13,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Users } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Users, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +43,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import {
+  handleResponsibilityRecord,
+  updateResponsibilityRecord,
+  deleteResponsibilityRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const responsibilityFormSchema = z.object({
   name: z.string().min(1, "Responsibility name is required"),
@@ -53,6 +69,11 @@ export default function ResponsibilityCard({
   responsibilities,
 }: ResponsibilityCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingResponsibility, setEditingResponsibility] =
+    useState<Responsibility | null>(null);
+  const [deletingResponsibility, setDeletingResponsibility] =
+    useState<Responsibility | null>(null);
 
   const form = useForm<ResponsibilityFormValues>({
     resolver: zodResolver(responsibilityFormSchema),
@@ -64,10 +85,66 @@ export default function ResponsibilityCard({
     },
   });
 
-  const onSubmit = (data: ResponsibilityFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: ResponsibilityFormValues) => {
+    try {
+      if (editingResponsibility) {
+        await updateResponsibilityRecord(
+          editingResponsibility.id.toString(),
+          data
+        );
+        toast.success("Responsibility updated successfully!");
+      } else {
+        await handleResponsibilityRecord(data);
+        toast.success("Responsibility added successfully!");
+      }
+      setDialogOpen(false);
+      setEditingResponsibility(null);
+      form.reset();
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleEdit = (responsibility: Responsibility) => {
+    setEditingResponsibility(responsibility);
+    form.reset({
+      name: responsibility.name,
+      position: responsibility.position,
+      type: responsibility.type,
+      date: new Date(responsibility.date),
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (responsibility: Responsibility) => {
+    setDeletingResponsibility(responsibility);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingResponsibility) return;
+
+    try {
+      await deleteResponsibilityRecord(deletingResponsibility.id.toString());
+      toast.success("Responsibility deleted successfully!");
+      setDeleteDialogOpen(false);
+      setDeletingResponsibility(null);
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingResponsibility(null);
+    form.reset({
+      name: "",
+      position: "",
+      type: "",
+      date: new Date(),
+    });
+    setDialogOpen(true);
   };
 
   return (
@@ -79,20 +156,21 @@ export default function ResponsibilityCard({
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Responsibility
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Responsibility</DialogTitle>
+              <DialogTitle>
+                {editingResponsibility
+                  ? "Edit Responsibility"
+                  : "Add Responsibility"}
+              </DialogTitle>
               <DialogDescription>
-                Add a new responsibility to your profile.
+                {editingResponsibility
+                  ? "Edit the responsibility details."
+                  : "Add a new responsibility to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -196,7 +274,11 @@ export default function ResponsibilityCard({
                   </Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting
-                      ? "Adding..."
+                      ? editingResponsibility
+                        ? "Updating..."
+                        : "Adding..."
+                      : editingResponsibility
+                      ? "Update Responsibility"
                       : "Add Responsibility"}
                   </Button>
                 </DialogFooter>
@@ -218,7 +300,7 @@ export default function ResponsibilityCard({
           responsibilities.map((responsibility) => (
             <div key={responsibility.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{responsibility.name}</h4>
                   <p className="text-sm text-muted-foreground">
                     Position: {responsibility.position}
@@ -230,14 +312,49 @@ export default function ResponsibilityCard({
                     {format(new Date(responsibility.date), "MMM yyyy")}
                   </p>
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleEdit(responsibility)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(responsibility)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              responsibility &ldquo;{deletingResponsibility?.name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -14,7 +14,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Wrench, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Wrench, X, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -26,6 +36,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { z } from "zod";
+import {
+  handleSkillsRecord,
+  updateSkillsRecord,
+  deleteSkillsRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const skillsFormSchema = z.object({
   category: z.string().min(1, "Category is required"),
@@ -41,6 +57,9 @@ interface SkillsCardProps {
 export default function SkillsCard({ skills }: SkillsCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [skillInput, setSkillInput] = useState("");
+  const [editingSkill, setEditingSkill] = useState<Skills | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingSkill, setDeletingSkill] = useState<Skills | null>(null);
 
   const form = useForm<SkillsFormValues>({
     resolver: zodResolver(skillsFormSchema),
@@ -50,11 +69,23 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
     },
   });
 
-  const onSubmit = (data: SkillsFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
-    setSkillInput("");
+  const onSubmit = async (data: SkillsFormValues) => {
+    try {
+      if (editingSkill) {
+        await updateSkillsRecord(editingSkill.id.toString(), data);
+        toast.success("Skills updated successfully!");
+      } else {
+        await handleSkillsRecord(data);
+        toast.success("Skills added successfully!");
+      }
+      setDialogOpen(false);
+      setEditingSkill(null);
+      form.reset();
+      setSkillInput("");
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
   };
 
   const addSkill = () => {
@@ -76,6 +107,44 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
     );
   };
 
+  const handleEdit = (skill: Skills) => {
+    setEditingSkill(skill);
+    form.reset({
+      category: skill.category,
+      skills: skill.skills,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (skill: Skills) => {
+    setDeletingSkill(skill);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingSkill) return;
+
+    try {
+      await deleteSkillsRecord(deletingSkill.id.toString());
+      toast.success("Skills deleted successfully!");
+      setDeleteDialogOpen(false);
+      setDeletingSkill(null);
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingSkill(null);
+    form.reset({
+      category: "",
+      skills: [],
+    });
+    setSkillInput("");
+    setDialogOpen(true);
+  };
+
   const currentSkills = form.watch("skills");
 
   return (
@@ -87,20 +156,19 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Skills
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Skills</DialogTitle>
+              <DialogTitle>
+                {editingSkill ? "Edit Skills" : "Add Skills"}
+              </DialogTitle>
               <DialogDescription>
-                Add a new skill category to your profile.
+                {editingSkill
+                  ? "Edit the skills category."
+                  : "Add a new skill category to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -175,7 +243,13 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
                     Cancel
                   </Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? "Adding..." : "Add Skills"}
+                    {form.formState.isSubmitting
+                      ? editingSkill
+                        ? "Updating..."
+                        : "Adding..."
+                      : editingSkill
+                      ? "Update Skills"
+                      : "Add Skills"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -196,7 +270,7 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
           skills.map((skill) => (
             <div key={skill.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{skill.category}</h4>
                   <div className="flex flex-wrap gap-2">
                     {skill.skills.map((skillName, index) => (
@@ -206,14 +280,49 @@ export default function SkillsCard({ skills }: SkillsCardProps) {
                     ))}
                   </div>
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleEdit(skill)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(skill)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              skills category &ldquo;{deletingSkill?.category}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

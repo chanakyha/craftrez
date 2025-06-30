@@ -13,7 +13,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trophy } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Trophy, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +43,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import {
+  handleAchievementRecord,
+  updateAchievementRecord,
+  deleteAchievementRecord,
+} from "@/lib/actions";
+import { toast } from "sonner";
 
 const achievementFormSchema = z.object({
   name: z.string().min(1, "Achievement name is required"),
@@ -54,6 +70,11 @@ export default function AchievementCard({
   achievements,
 }: AchievementCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingAchievement, setEditingAchievement] =
+    useState<Achievement | null>(null);
+  const [deletingAchievement, setDeletingAchievement] =
+    useState<Achievement | null>(null);
 
   const form = useForm<AchievementFormValues>({
     resolver: zodResolver(achievementFormSchema),
@@ -66,10 +87,65 @@ export default function AchievementCard({
     },
   });
 
-  const onSubmit = (data: AchievementFormValues) => {
-    console.log(data);
-    setDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: AchievementFormValues) => {
+    try {
+      if (editingAchievement) {
+        await updateAchievementRecord(editingAchievement.id.toString(), data);
+        toast.success("Achievement updated successfully!");
+      } else {
+        await handleAchievementRecord(data);
+        toast.success("Achievement added successfully!");
+      }
+      setDialogOpen(false);
+      setEditingAchievement(null);
+      form.reset();
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleEdit = (achievement: Achievement) => {
+    setEditingAchievement(achievement);
+    form.reset({
+      name: achievement.name,
+      position: achievement.position,
+      place: achievement.place,
+      issuer: achievement.issuer,
+      date: new Date(achievement.date),
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (achievement: Achievement) => {
+    setDeletingAchievement(achievement);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingAchievement) return;
+
+    try {
+      await deleteAchievementRecord(deletingAchievement.id.toString());
+      toast.success("Achievement deleted successfully!");
+      setDeleteDialogOpen(false);
+      setDeletingAchievement(null);
+    } catch (error) {
+      toast.error("Something went wrong!");
+      console.error(error);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingAchievement(null);
+    form.reset({
+      name: "",
+      position: "",
+      place: "",
+      issuer: "",
+      date: new Date(),
+    });
+    setDialogOpen(true);
   };
 
   return (
@@ -81,20 +157,19 @@ export default function AchievementCard({
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Achievement
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Achievement</DialogTitle>
+              <DialogTitle>
+                {editingAchievement ? "Edit Achievement" : "Add Achievement"}
+              </DialogTitle>
               <DialogDescription>
-                Add a new achievement to your profile.
+                {editingAchievement
+                  ? "Edit the achievement details."
+                  : "Add a new achievement to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -208,7 +283,11 @@ export default function AchievementCard({
                   </Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting
-                      ? "Adding..."
+                      ? editingAchievement
+                        ? "Updating..."
+                        : "Adding..."
+                      : editingAchievement
+                      ? "Update Achievement"
                       : "Add Achievement"}
                   </Button>
                 </DialogFooter>
@@ -230,7 +309,7 @@ export default function AchievementCard({
           achievements.map((achievement) => (
             <div key={achievement.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{achievement.name}</h4>
                   <p className="text-sm text-muted-foreground">
                     Position: {achievement.position}
@@ -245,14 +324,49 @@ export default function AchievementCard({
                     {format(new Date(achievement.date), "MMM yyyy")}
                   </p>
                 </div>
-                <Button size="sm" variant="ghost">
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleEdit(achievement)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(achievement)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              achievement &ldquo;{deletingAchievement?.name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

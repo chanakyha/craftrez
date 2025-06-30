@@ -13,7 +13,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Award, Trash } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Award, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,6 +71,9 @@ export default function CertificationCard({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingCertification, setDeletingCertification] =
+    useState<Certification | null>(null);
+
   const form = useForm<CertificationFormValues>({
     resolver: zodResolver(certificationFormSchema),
     defaultValues: {
@@ -94,6 +107,33 @@ export default function CertificationCard({
     }
   };
 
+  const handleDeleteClick = (certification: Certification) => {
+    setDeletingCertification(certification);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingCertification) return;
+
+    try {
+      setIsLoading(true);
+      await deleteCertificationRecord(deletingCertification.id.toString());
+      toast.success("Certification record deleted successfully");
+      setDeleteDialogOpen(false);
+      setDeletingCertification(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Certification record not deleted");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddNew = () => {
+    form.reset();
+    setDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -103,11 +143,7 @@ export default function CertificationCard({
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setDialogOpen(true)}
-            >
+            <Button size="icon" variant="outline" onClick={handleAddNew}>
               <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -119,7 +155,9 @@ export default function CertificationCard({
                   : "Add Certification"}
               </DialogTitle>
               <DialogDescription>
-                Add a new certification to your profile.
+                {form.getValues("id")
+                  ? "Edit the certification details."
+                  : "Add a new certification to your profile."}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -210,7 +248,7 @@ export default function CertificationCard({
                       isLoading={isLoading}
                       loadingText="Updating..."
                     >
-                      {isLoading ? "Updating..." : "Update Certification"}
+                      Update Certification
                     </Button>
                   ) : (
                     <Button
@@ -219,7 +257,7 @@ export default function CertificationCard({
                       isLoading={isLoading}
                       loadingText="Adding..."
                     >
-                      {isLoading ? "Adding..." : "Add Certification"}
+                      Add Certification
                     </Button>
                   )}
                 </DialogFooter>
@@ -241,7 +279,7 @@ export default function CertificationCard({
           certifications.map((certification) => (
             <div key={certification.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{certification.name}</h4>
                   <p className="text-sm text-muted-foreground">
                     Issued by: {certification.issuer}
@@ -250,7 +288,7 @@ export default function CertificationCard({
                     {format(new Date(certification.issue_date), "MMM yyyy")}
                   </p>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex gap-2 ml-4">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -268,56 +306,41 @@ export default function CertificationCard({
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Dialog
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(certification)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
                   >
-                    <DialogTrigger asChild>
-                      <Button size="icon" variant="ghost">
-                        <Trash className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Delete Certification</DialogTitle>
-                      </DialogHeader>
-                      <DialogDescription>
-                        Are you sure you want to delete this certification?
-                      </DialogDescription>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => setDeleteDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          isLoading={isLoading}
-                          loadingText="Deleting..."
-                          onClick={async () => {
-                            setIsLoading(true);
-                            await deleteCertificationRecord(
-                              certification.id.toString()
-                            );
-                            toast.success(
-                              "Certification record deleted successfully"
-                            );
-                            setIsLoading(false);
-                            setDeleteDialogOpen(false);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              certification &ldquo;{deletingCertification?.name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

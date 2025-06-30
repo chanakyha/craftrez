@@ -13,7 +13,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Edit, GraduationCap, Trash } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Edit, GraduationCap, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,7 +82,12 @@ interface EducationCardProps {
 
 export default function EducationCard({ educations }: EducationCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingEducation, setDeletingEducation] = useState<Education | null>(
+    null
+  );
+
   const form = useForm<EducationFormValues>({
     resolver: zodResolver(educationFormSchema),
     defaultValues: {
@@ -110,6 +125,28 @@ export default function EducationCard({ educations }: EducationCardProps) {
           ? "Failed to update education record"
           : "Failed to add education record"
       );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (education: Education) => {
+    setDeletingEducation(education);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingEducation) return;
+
+    try {
+      setIsLoading(true);
+      await deleteEducationRecord(deletingEducation.id.toString());
+      toast.success("Education record deleted successfully");
+      setDeleteDialogOpen(false);
+      setDeletingEducation(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Education record not deleted");
     } finally {
       setIsLoading(false);
     }
@@ -353,7 +390,7 @@ export default function EducationCard({ educations }: EducationCardProps) {
           educations.map((education) => (
             <div key={education.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <h4 className="font-semibold">{education.degree}</h4>
                   <p className="text-sm text-muted-foreground">
                     {education.school_name}
@@ -376,60 +413,7 @@ export default function EducationCard({ educations }: EducationCardProps) {
                     </p>
                   )}
                 </div>
-                <div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        className="text-red-500"
-                        size="icon"
-                        variant="ghost"
-                      >
-                        <Trash className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Delete Education</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to delete this education record?
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          isLoading={isLoading}
-                          loadingText="Deleting..."
-                          onClick={async () => {
-                            try {
-                              setIsLoading(true);
-                              await deleteEducationRecord(
-                                education.id.toString()
-                              );
-                              toast.success(
-                                "Education record deleted successfully"
-                              );
-                            } catch (error) {
-                              console.error(error);
-                              toast.error("Education record not deleted");
-                            } finally {
-                              setIsLoading(false);
-                            }
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-
+                <div className="flex gap-2 ml-4">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -451,12 +435,42 @@ export default function EducationCard({ educations }: EducationCardProps) {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleDeleteClick(education)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
           ))
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              education record for &ldquo;{deletingEducation?.degree}&rdquo; at
+              &ldquo;{deletingEducation?.school_name}&rdquo;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
