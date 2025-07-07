@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "npx prisma studio & next dev --turbopack",
     "prisma:dev": "npx prisma studio",
+    "ngrok": "ngrok http --url=accurate-spider-exotic.ngrok-free.app 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

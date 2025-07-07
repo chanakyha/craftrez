@@ -8,17 +8,17 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import EducationCard from "./components/education-card";
-import ExperienceCard from "./components/experience-card";
-import ProjectCard from "./components/project-card";
-import CertificationCard from "./components/certification-card";
-import PublicationCard from "./components/publication-card";
-import SkillsCard from "./components/skills-card";
-import AchievementCard from "./components/achievement-card";
-import ResponsibilityCard from "./components/responsibility-card";
-import InterestCard from "./components/interest-card";
-import LanguageCard from "./components/language-card";
-import ResumeCard from "./components/resume-card";
+import EducationCard from "@/components/profile/education-card";
+import ExperienceCard from "@/components/profile/experience-card";
+import ProjectCard from "@/components/profile/project-card";
+import CertificationCard from "@/components/profile/certification-card";
+import PublicationCard from "@/components/profile/publication-card";
+import SkillsCard from "@/components/profile/skills-card";
+import AchievementCard from "@/components/profile/achievement-card";
+import ResponsibilityCard from "@/components/profile/responsibility-card";
+import InterestCard from "@/components/profile/interest-card";
+import LanguageCard from "@/components/profile/language-card";
+import ResumeCard from "@/components/profile/resume-card";
 
 interface ProfileClientProps {
   user: User;
